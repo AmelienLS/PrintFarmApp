@@ -1,0 +1,83 @@
+classDiagram
+    direction LR
+
+    class IPrinter {
+      <<interface>>
+      +name: str
+      +can_print(job): bool
+      +start_job(job): void
+      +is_busy(): bool
+      +tick(delta_min): void
+      +status(): str
+      +load_filament(spool): void
+    }
+
+    class BasePrinter {
+      -_name: str
+      -nozzle_mm: float
+      -_current_spool: FilamentSpool
+      -_current_job: PrintJob
+      -_mins_left: int
+      +load_filament(spool): void
+      +can_print(job): bool
+      +start_job(job): void
+      +is_busy(): bool
+      +tick(delta_min): void
+      +status(): str
+      +__del__()
+    }
+
+    class BambuPrinter
+    class PrusaPrinter
+
+    IPrinter <|.. BasePrinter
+    BasePrinter <|-- BambuPrinter
+    BasePrinter <|-- PrusaPrinter
+
+    class FilamentSpool {
+      -_material: str
+      -_color: str
+      -_total_g: int
+      -_remaining_g: int
+      +material: str
+      +color: str
+      +remaining_g: int
+      +consume(grams): void
+      +__del__()
+    }
+
+    class PrintJob {
+      +job_id: str
+      +material: str
+      +required_g: int
+      +estimated_minutes: int
+      +priority: int
+    }
+
+    class ISchedulingStrategy {
+      <<interface>>
+      +pick_next(queue): PrintJob
+    }
+
+    class PriorityFirst
+    class ShortestJobFirst
+
+    ISchedulingStrategy <|.. PriorityFirst
+    ISchedulingStrategy <|.. ShortestJobFirst
+
+    class Scheduler {
+      -_printers: List~IPrinter~
+      -_queue: List~PrintJob~
+      -_time_elapsed: int
+      -_events: List~str~
+      -_strategy: ISchedulingStrategy
+      +add_printer(printer): void
+      +submit(job): void
+      +run(): (int, List~str~)
+      +time_elapsed: int
+      +queue: List~PrintJob~
+    }
+
+    Scheduler "1" o-- "many" IPrinter
+    BasePrinter "1" --> "0..1" FilamentSpool : utilise
+    BasePrinter "1" --> "0..1" PrintJob : exécute
